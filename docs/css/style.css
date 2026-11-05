@@ -1,0 +1,90 @@
+:root {
+  --bg: #0b0f14;
+  --card: #131a22;
+  --line: #222c38;
+  --text: #e6edf3;
+  --muted: #8b98a7;
+  --accent: #3ddc97;
+  --warn: #ffb547;
+  --bad: #ff6b6b;
+  --radius: 12px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  max-width: 760px; margin: 0 auto; padding: 0 12px env(safe-area-inset-bottom);
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+button, select {
+  font: inherit; color: var(--text); background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer;
+}
+button.ghost { background: transparent; }
+button:disabled { opacity: .5; cursor: default; }
+
+.top { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 14px 0 8px; }
+.top h1 { margin: 0; font-size: 20px; letter-spacing: .2px; }
+.sub { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+.tabs { display: flex; gap: 6px; }
+.tabs button { flex: 1; padding: 9px; border-radius: 10px; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: #062015; border-color: var(--accent); font-weight: 600; }
+
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; font-size: 13px; }
+.bar.wrap { flex-wrap: wrap; justify-content: flex-start; }
+.legend { font-size: 12px; margin: 0 0 8px; }
+
+.cards, .feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px; cursor: pointer;
+}
+.card:hover { border-color: #33414f; }
+.card .head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.card h2 { font-size: 15px; margin: 0; }
+.rank { color: var(--muted); margin-right: 4px; }
+.meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.live { color: var(--bad); font-weight: 600; }
+.vol { font-weight: 600; white-space: nowrap; }
+
+.outcomes { margin-top: 10px; display: grid; gap: 6px; }
+.oc { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 2px 8px; align-items: center; font-size: 13px; }
+.oc .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc .pct { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.oc .backed { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+.meter { flex: 1; height: 6px; background: #0d1319; border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.backed span { white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 120px; text-align: right; }
+
+.trade {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 12px; display: grid; gap: 3px; font-size: 13px;
+}
+.trade.sharp { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn) inset; }
+.trade.fresh { animation: flash 1.2s ease-out; }
+@keyframes flash { from { background: #1d2a22; } to { background: var(--card); } }
+.trade .row1 { display: flex; justify-content: space-between; gap: 8px; }
+.amt { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+.side-BUY { color: var(--accent); }
+.side-SELL { color: var(--bad); }
+.title { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.score { font-size: 12px; color: var(--muted); }
+.score b { color: var(--text); font-weight: 600; }
+.sharp-tag, .sharp-dot { color: #1a1200; background: var(--warn); border-radius: 6px; padding: 0 6px; font-size: 11px; font-weight: 700; }
+.sharp-dot { display: inline-block; width: 10px; height: 10px; padding: 0; border-radius: 50%; vertical-align: -1px; }
+
+dialog {
+  width: min(720px, 100vw - 16px); max-height: 85vh; background: var(--bg); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 14px;
+}
+dialog::backdrop { background: rgba(0,0,0,.6); }
+dialog .close { float: right; }
+dialog h3 { margin: 0 0 4px; font-size: 16px; }
+
+.foot { border-top: 1px solid var(--line); margin-top: 24px; padding: 14px 0 28px; text-align: center; font-size: 13px; }
+.foot p { margin: 4px 0; }
+.empty { padding: 24px; text-align: center; color: var(--muted); }
