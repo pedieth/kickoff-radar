@@ -1,0 +1,12 @@
+{
+  "name": "kickoff-radar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Polymarket football radar: busiest matches today and big football trades.",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server -d docs 8000"
+  },
+  "license": "MIT"
+}
