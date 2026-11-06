@@ -138,12 +138,18 @@ export function groupMatches(events, nowMs, { backH = 4, aheadH = 24 } = {}) {
 /**
  * Share of BUY volume (USD) and unique buying wallets per outcome, for trades at/after sinceSec.
  * outcomes: [{label, conditionId, outcomeIndex}]. Trades on other markets/sides are ignored.
+ * Buys at <=3c or >=97c are skipped: those are near-settled lock-ins, not someone backing a side.
  */
+export const SETTLED_LO = 0.03;
+export const SETTLED_HI = 0.97;
+
 export function sideShare(trades, outcomes, sinceSec = 0) {
   const rows = outcomes.map((o) => ({ label: o.label, usd: 0, wallets: new Set(), trades: 0 }));
   const idx = new Map(outcomes.map((o, i) => [`${String(o.conditionId).toLowerCase()}:${o.outcomeIndex}`, i]));
   for (const t of trades || []) {
     if (t.side !== 'BUY' || Number(t.timestamp) < sinceSec) continue;
+    const px = Number(t.price);
+    if (!(px > SETTLED_LO && px < SETTLED_HI)) continue;
     const i = idx.get(`${String(t.condition_id).toLowerCase()}:${Number(t.outcome_index)}`);
     if (i == null) continue;
     rows[i].usd += tradeUsd(t);

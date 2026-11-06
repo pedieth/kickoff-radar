@@ -3,7 +3,7 @@
 A small radar for football on Polymarket. Two views:
 
 - **Today** – the matches with the most trading in the last 24 hours, kickoff in your local time, the current implied odds for each outcome, and what traders actually backed: share of buy volume and number of distinct wallets per outcome. Tap a match to see its recent big trades.
-- **Whales** – football trades of $500 / $1,000 / $5,000 or more, refreshed every 30 seconds while the page is open. Each wallet gets a football record (resolved football bets, win rate, PnL), and wallets with 20+ resolved bets and a 60%+ win rate are highlighted. You can opt in to a browser notification when one of them trades.
+- **Whales** – football trades of $500 / $1,000 / $5,000 or more, refreshed every 30 seconds while the page is open. Each wallet gets a football record (resolved football bets, win rate, PnL), and wallets with 20+ resolved bets and a 60%+ win rate are highlighted. You can opt in to a browser notification when one of them trades. Every row is the taker side of the fill (the order crossed the spread), so resting maker orders don't show up here.
 
 Plain HTML, CSS and JavaScript. No framework, no build step, no backend, no API keys.
 

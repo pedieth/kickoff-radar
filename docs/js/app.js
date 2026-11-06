@@ -39,7 +39,7 @@ function boot() {
 
 /* ---------- Today ---------- */
 
-const kickoffFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+const kickoffFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
 
 async function loadToday(force = false) {
   const status = $('#today-status');
@@ -67,7 +67,7 @@ function renderMatches() {
       const r = share?.rows?.[j];
       const backed = !share ? '<span>…</span>'
         : share.error || r?.share == null ? '<span>—</span>'
-          : `<span>${fmtPct(r.share)} of buys · ${r.wallets} wallets</span>`;
+          : `<span>${fmtPct(r.share)} · ${fmtUsd(r.usd)} · ${r.wallets} wallet${r.wallets === 1 ? '' : 's'}</span>`;
       const w = r?.share != null ? Math.round(r.share * 100) : 0;
       return `<div class="oc">
         <span class="name">${esc(o.label)}</span><span class="pct">${fmtPct(o.price)}</span>
@@ -75,7 +75,7 @@ function renderMatches() {
       </div>`;
     }).join('');
     const note = share && !share.error
-      ? `<div class="meta">Backed = buys of each "Yes", last 24h: ${fmtUsd(share.total)}${share.complete ? '' : ' (latest trades only)'}</div>` : '';
+      ? `<div class="meta">Backed = money bought on each side at 4–96¢ in the last 24h: ${fmtUsd(share.total)}${share.complete ? '' : ' (latest trades only)'}</div>` : '';
     return `<li class="card" data-key="${esc(m.key)}" tabindex="0">
       <div class="head"><h2><span class="rank">${i + 1}</span>${esc(m.title)}</h2><span class="vol">${fmtUsd(m.vol24)}</span></div>
       <div class="meta">${esc(m.league)} · ${when} · 24h volume</div>
@@ -128,7 +128,7 @@ function tradeRow(t) {
   const sc = cachedScore(t.proxy_wallet);
   const sharp = isStrong(sc);
   return `<li class="trade${sharp ? ' sharp' : ''}" data-wallet="${esc(t.proxy_wallet)}" data-key="${esc(tradeKey(t))}">
-    <div class="row1"><span class="amt">${fmtUsd(usd)} <span class="side-${esc(t.side)}">${esc(t.side)}</span> ${esc(t.outcome)} @ ${Math.round(Number(t.price) * 100)}¢</span>
+    <div class="row1"><span class="amt">${fmtUsd(usd)} <span class="side-${esc(t.side)}">${esc(t.side)}</span> ${esc(t.outcome)} @ ${Math.round(Number(t.price) * 100)}¢ <span class="taker" title="Taker: this order crossed the spread and filled against resting orders, it did not sit in the book as a maker.">taker</span></span>
       <span class="muted" data-ts="${Number(t.timestamp)}">${timeAgo(t.timestamp)}</span></div>
     <a class="title" href="https://polymarket.com/event/${encodeURIComponent(t.event_slug || t.slug)}" target="_blank" rel="noopener">${esc(t.title)}</a>
     <div class="score"><a href="https://polymarket.com/profile/${esc(t.proxy_wallet)}" target="_blank" rel="noopener">${esc(who)}</a>

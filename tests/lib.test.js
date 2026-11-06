@@ -110,3 +110,16 @@ test('formatting', () => {
   assert.equal(fmtUsd(NaN), '—');
   assert.equal(timeAgo(100, 130_000), '30s ago');
 });
+
+test('sideShare skips near-settled buys at 97c+ or 3c-', () => {
+  const outcomes = [{ label: 'A', conditionId: '0xa', outcomeIndex: 0 }, { label: 'Draw', conditionId: '0xb', outcomeIndex: 0 }];
+  const trades = [
+    { side: 'BUY', condition_id: '0xa', outcome_index: 0, price: 0.5, size: 100, proxy_wallet: 'w1', timestamp: 100 },
+    { side: 'BUY', condition_id: '0xb', outcome_index: 0, price: 0.99, size: 5000, proxy_wallet: 'w2', timestamp: 100 },
+    { side: 'BUY', condition_id: '0xb', outcome_index: 0, price: 0.02, size: 5000, proxy_wallet: 'w3', timestamp: 100 },
+  ];
+  const s = sideShare(trades, outcomes, 0);
+  assert.equal(s.rows[0].share, 1);
+  assert.equal(s.rows[1].usd, 0);
+  assert.equal(s.rows[1].wallets, 0);
+});
