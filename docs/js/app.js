@@ -1,13 +1,12 @@
-import { fetchSports, fetchSoccerEvents, fetchEventTrades, fetchBigTrades, fetchWalletPositions } from './api.js';
+import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js';
 import {
-  soccerLeagueCodes, groupMatches, sideShare, isFootballTrade, tradeUsd, walletScore,
+  soccerLeagueCodes, isFootballTrade, tradeUsd, walletScore,
   isStrong, fmtUsd, fmtPct, timeAgo, tradeKey,
 } from './lib.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const DAY = 86400;
 const POLL_MS = 30_000;
 const SCORE_TTL = 4 * 3600e3;
 const MAX_FEED = 150;
@@ -15,8 +14,6 @@ const MAX_FEED = 150;
 const state = {
   leagues: new Set(),
   known: new Set(),
-  matches: [],
-  shares: new Map(),
   trades: new Map(),
   scores: new Map(),
   pollTimer: null,
@@ -31,93 +28,9 @@ function boot() {
   ready ||= (async () => {
     const [sports, events] = await Promise.all([fetchSports(localStorage), fetchSoccerEvents()]);
     state.leagues = soccerLeagueCodes(sports);
-    state.events = events;
     state.known = new Set(events.map((e) => String(e.slug).toLowerCase()));
   })();
   return ready;
-}
-
-/* ---------- Today ---------- */
-
-const kickoffFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
-
-async function loadToday(force = false) {
-  const status = $('#today-status');
-  status.textContent = 'Loading matches…';
-  try {
-    if (force) { ready = null; state.shares.clear(); }
-    await boot();
-    state.matches = groupMatches(state.events, Date.now()).slice(0, 20);
-    renderMatches();
-    status.textContent = state.matches.length
-      ? `${state.matches.length} matches · ranked by 24h volume · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-      : 'No football matches in the next 24h.';
-    loadShares();
-  } catch (err) {
-    status.textContent = `Could not load matches (${err.message}).`;
-  }
-}
-
-function renderMatches() {
-  $('#matches').innerHTML = state.matches.map((m, i) => {
-    const share = state.shares.get(m.key);
-    const when = m.live ? `<span class="live">LIVE ${esc(m.score)} ${esc(m.period)}</span>`
-      : m.ended ? 'Finished' : esc(kickoffFmt.format(m.kickoff));
-    const rows = m.outcomes.map((o, j) => {
-      const r = share?.rows?.[j];
-      const backed = !share ? '<span>…</span>'
-        : share.error || r?.share == null ? '<span>—</span>'
-          : `<span>${fmtPct(r.share)} · ${fmtUsd(r.usd)} · ${r.wallets} wallet${r.wallets === 1 ? '' : 's'}</span>`;
-      const w = r?.share != null ? Math.round(r.share * 100) : 0;
-      return `<div class="oc">
-        <span class="name">${esc(o.label)}</span><span class="pct">${fmtPct(o.price)}</span>
-        <div class="backed"><div class="meter"><i style="width:${w}%"></i></div>${backed}</div>
-      </div>`;
-    }).join('');
-    const note = share && !share.error
-      ? `<div class="meta">Backed = money bought on each side at 4–96¢ in the last 24h: ${fmtUsd(share.total)}${share.complete ? '' : ' (latest trades only)'}</div>` : '';
-    return `<li class="card" data-key="${esc(m.key)}" tabindex="0">
-      <div class="head"><h2><span class="rank">${i + 1}</span>${esc(m.title)}</h2><span class="vol">${fmtUsd(m.vol24)}</span></div>
-      <div class="meta">${esc(m.league)} · ${when} · 24h volume</div>
-      <div class="outcomes">${rows}</div>${note}
-    </li>`;
-  }).join('') || '<li class="empty">Nothing here yet.</li>';
-}
-
-async function loadShares() {
-  const since = Math.floor(Date.now() / 1000) - DAY;
-  const queue = state.matches.filter((m) => !state.shares.has(m.key));
-  const worker = async () => {
-    while (queue.length) {
-      const m = queue.shift();
-      try {
-        const { trades, complete } = await fetchEventTrades(m.id, { sinceSec: since });
-        state.shares.set(m.key, { ...sideShare(trades, m.outcomes, since), complete });
-      } catch {
-        state.shares.set(m.key, { error: true });
-      }
-      renderMatches();
-      await sleep(150);
-    }
-  };
-  await Promise.all([worker(), worker()]);
-}
-
-async function openMatch(key) {
-  const m = state.matches.find((x) => x.key === key);
-  if (!m) return;
-  const body = $('#detail-body');
-  body.innerHTML = `<h3>${esc(m.title)}</h3><p class="muted">${esc(m.league)} · <a href="https://polymarket.com/event/${encodeURIComponent(m.slug)}" target="_blank" rel="noopener">open on Polymarket</a></p><p class="muted">Loading big trades…</p>`;
-  $('#detail').showModal();
-  try {
-    const { trades } = await fetchEventTrades(m.eventIds.slice(0, 20), { minUsd: 500, maxPages: 1, limit: 60 });
-    const rows = trades.map(tradeRow).join('');
-    body.innerHTML = body.innerHTML.replace(/<p class="muted">Loading big trades…<\/p>/, '')
-      + (rows ? `<p class="muted small">Trades of $500+ on this match, newest first.</p><ul class="feed">${rows}</ul>` : '<p class="empty">No trades of $500+ yet.</p>');
-    observeRows(body);
-  } catch (err) {
-    body.insertAdjacentHTML('beforeend', `<p class="empty">Could not load trades (${esc(err.message)}).</p>`);
-  }
 }
 
 /* ---------- Whales ---------- */
@@ -256,18 +169,6 @@ function startPolling() {
 
 /* ---------- wiring ---------- */
 
-function show(view) {
-  for (const b of document.querySelectorAll('.tabs button')) b.setAttribute('aria-selected', String(b.dataset.view === view));
-  $('#view-today').hidden = view !== 'today';
-  $('#view-whales').hidden = view !== 'whales';
-  if (view === 'whales') startPolling();
-  history.replaceState(null, '', view === 'whales' ? '#whales' : '#');
-}
-
-document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => show(b.dataset.view)));
-$('#today-refresh').addEventListener('click', () => loadToday(true));
-$('#matches').addEventListener('click', (e) => { const c = e.target.closest('.card'); if (c) openMatch(c.dataset.key); });
-$('#matches').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const c = e.target.closest('.card'); if (c) openMatch(c.dataset.key); } });
 $('#whale-min').addEventListener('change', () => { state.trades.clear(); state.firstPoll = true; pollWhales(); });
 
 const nb = $('#notify');
@@ -280,5 +181,4 @@ else {
 
 setInterval(() => document.querySelectorAll('[data-ts]').forEach((el) => { el.textContent = timeAgo(el.dataset.ts); }), 10_000);
 
-loadToday();
-if (location.hash === '#whales') show('whales');
+startPolling();
