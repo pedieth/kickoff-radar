@@ -2,8 +2,12 @@
 const ORIGIN = 'https://pedieth.github.io/kickoff-radar';
 const HOST = 'https://kickoff-radar.pedieth.workers.dev';
 
-// fill in after signing the domain in the farcaster manifest tool
-const ACCOUNT_ASSOCIATION = null;
+// signed by @pk for this domain
+const ACCOUNT_ASSOCIATION = {
+  header: 'eyJmaWQiOjE2NDQ3LCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4RWJDNTU1MTA4OTdhOTMyQjk1N2U5YzExNjlhQzQwN2FGOTFFNmI0RCJ9',
+  payload: 'eyJkb21haW4iOiJraWNrb2ZmLXJhZGFyLnBlZGlldGgud29ya2Vycy5kZXYifQ',
+  signature: 'eT5Fvcu6VOfM7RFdXbpxg/sWE557crsJLMtGkN2TCG4iWGprs1kqepjKZSm/n+V5bkQPYCNzM7Mh6qktxUW2khs=',
+};
 
 const manifest = () => ({
   ...(ACCOUNT_ASSOCIATION ? { accountAssociation: ACCOUNT_ASSOCIATION } : {}),
