@@ -1,8 +1,24 @@
 # Kickoff Radar
 
-A small radar for football on Polymarket.
+<p align="center">
+  <img src="docs/img/embed.png" alt="Kickoff Radar" width="640">
+</p>
 
-Football trades of $500 / $1,000 / $5,000 or more, refreshed every 30 seconds while the page is open. Each wallet gets a football record (resolved football bets, win rate, PnL), and wallets with 20+ resolved bets and a 60%+ win rate are highlighted. You can opt in to a browser notification when one of them trades. Every row is the taker side of the fill (the order crossed the spread), so resting maker orders don't show up here.
+<p align="center">
+  <b>Big Polymarket football trades as they happen, with each wallet's football track record.</b><br>
+  <a href="https://kickoff-radar.pedieth.workers.dev">Open the app</a> ·
+  <a href="https://farcaster.xyz/pk">Farcaster mini app by @pk</a>
+</p>
+
+## What it does
+
+- Live feed of football trades over $500, $1k or $5k, refreshed every 30 seconds.
+- A football record for every wallet: resolved bets, win rate and PnL.
+- **Sharp** wallets (20+ resolved bets, 60%+ won) are highlighted, with optional browser alerts when one trades.
+- Every row is the taker side of a fill, so resting maker orders don't show up.
+- Runs as a Farcaster mini app too: cast the link and it opens in the feed.
+
+<p align="center"><img src="docs/img/screenshot.png" alt="Kickoff Radar feed" width="360"></p>
 
 Plain HTML, CSS and JavaScript. No framework, no build step, no backend, no API keys.
 
@@ -34,7 +50,9 @@ node --test
 
 ## Deploy
 
-`.github/workflows/pages.yml` runs the tests and publishes `docs/` to GitHub Pages on every push to `main`. Enable Pages with "GitHub Actions" as the source.
+`.github/workflows/pages.yml` runs the tests and publishes `docs/` to GitHub Pages on every push to `main`.
+
+`worker/index.js` is a small Cloudflare Worker that serves the same site from the root of `kickoff-radar.pedieth.workers.dev` and adds `/.well-known/farcaster.json`, the manifest Farcaster needs for the mini app.
 
 ## Disclaimer
 
@@ -48,4 +66,4 @@ MIT
 
 ---
 
-Built by [pedieth](https://github.com/pedieth) · [@Pedi_eth](https://x.com/Pedi_eth)
+Built by [@pk](https://farcaster.xyz/pk) · [pedieth](https://github.com/pedieth) · [@Pedi_eth](https://x.com/Pedi_eth)

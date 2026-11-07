@@ -40,20 +40,26 @@ function tradeRow(t) {
   const who = t.name && !/^0x[0-9a-f]{40}-/i.test(t.name) ? t.name : (t.pseudonym || `${t.proxy_wallet.slice(0, 6)}…${t.proxy_wallet.slice(-4)}`);
   const sc = cachedScore(t.proxy_wallet);
   const sharp = isStrong(sc);
+  const side = t.side === 'SELL' ? 'SELL' : 'BUY';
   return `<li class="trade${sharp ? ' sharp' : ''}" data-wallet="${esc(t.proxy_wallet)}" data-key="${esc(tradeKey(t))}">
-    <div class="row1"><span class="amt">${fmtUsd(usd)} <span class="side-${esc(t.side)}">${esc(t.side)}</span> ${esc(t.outcome)} @ ${Math.round(Number(t.price) * 100)}¢ <span class="taker" title="Taker: this order crossed the spread and filled against resting orders, it did not sit in the book as a maker.">taker</span></span>
-      <span class="muted" data-ts="${Number(t.timestamp)}">${timeAgo(t.timestamp)}</span></div>
-    <a class="title" href="https://polymarket.com/event/${encodeURIComponent(t.event_slug || t.slug)}" target="_blank" rel="noopener">${esc(t.title)}</a>
-    <div class="score"><a href="https://polymarket.com/profile/${esc(t.proxy_wallet)}" target="_blank" rel="noopener">${esc(who)}</a>
-      · <span class="rec">${scoreText(sc)}</span></div>
+    <div class="row1">
+      <span class="pick"><span class="side side-${side}">${side}</span><span class="outcome">${esc(t.outcome)}</span><span class="price">${Math.round(Number(t.price) * 100)}¢</span></span>
+      <span class="amt">${fmtUsd(usd)}</span>
+    </div>
+    <div class="row2">
+      <a class="title" href="https://polymarket.com/event/${encodeURIComponent(t.event_slug || t.slug)}" target="_blank" rel="noopener">${esc(t.title)}</a>
+      <span class="ago" data-ts="${Number(t.timestamp)}">${timeAgo(t.timestamp)}</span>
+    </div>
+    <div class="who"><a href="https://polymarket.com/profile/${esc(t.proxy_wallet)}" target="_blank" rel="noopener">${esc(who)}</a><span class="rec">${scoreText(sc)}</span></div>
   </li>`;
 }
 
 function scoreText(sc) {
-  if (sc === undefined) return 'football record …';
-  if (!sc || sc.error) return 'football record —';
-  if (!sc.resolved) return 'no resolved football bets';
-  return `<b>${sc.resolved}</b> bets · <b>${fmtPct(sc.winRate)}</b> won · <b>${fmtUsd(sc.pnl)}</b> PnL${sc.truncated ? ' (recent)' : ''}${isStrong(sc) ? ' <span class="sharp-tag">sharp</span>' : ''}`;
+  if (sc === undefined) return '<span class="chip ghost">loading record</span>';
+  if (!sc || sc.error) return '<span class="chip ghost">no record</span>';
+  if (!sc.resolved) return '<span class="chip ghost">new to football</span>';
+  const pnlCls = sc.pnl >= 0 ? 'pos' : 'neg';
+  return `<span class="chip">${sc.resolved}${sc.truncated ? '+' : ''} bets</span><span class="chip">${fmtPct(sc.winRate)} won</span><span class="chip ${pnlCls}">${fmtUsd(sc.pnl)}</span>${isStrong(sc) ? '<span class="sharp-tag">sharp</span>' : ''}`;
 }
 
 function cachedScore(wallet) {
@@ -130,7 +136,7 @@ async function pollWhales() {
     const list = [...state.trades.values()].sort((a, b) => b.timestamp - a.timestamp).slice(0, MAX_FEED);
     state.trades = new Map(list.map((t) => [tradeKey(t), t]));
     renderWhales(added);
-    status.textContent = `${list.length} football trades · updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    status.textContent = `${list.length} trades · updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   } catch (err) {
     status.textContent = `Feed error (${err.message}), retrying…`;
   }
@@ -140,7 +146,7 @@ function renderWhales(added) {
   const ul = $('#whales');
   const seen = new Set([...ul.querySelectorAll('.trade')].map((el) => el.dataset.key));
   const list = [...state.trades.values()].sort((a, b) => b.timestamp - a.timestamp);
-  ul.innerHTML = list.map(tradeRow).join('') || '<li class="empty">Waiting for football trades…</li>';
+  ul.innerHTML = list.map(tradeRow).join('') || '<li class="empty">Listening for big football trades…</li>';
   if (!state.firstPoll && added) ul.querySelectorAll('.trade').forEach((el) => { if (!seen.has(el.dataset.key)) el.classList.add('fresh'); });
   state.firstPoll = false;
   observeRows(ul);
@@ -171,10 +177,23 @@ function startPolling() {
 
 $('#whale-min').addEventListener('change', () => { state.trades.clear(); state.firstPoll = true; pollWhales(); });
 
+document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+  const sel = $('#whale-min');
+  if (sel.value === b.dataset.v) return;
+  sel.value = b.dataset.v;
+  sel.dispatchEvent(new Event('change'));
+}));
+
 const nb = $('#notify');
 if (!('Notification' in window)) nb.hidden = true;
 else {
-  const sync = () => { nb.textContent = Notification.permission === 'granted' ? 'Alerts on' : 'Alert me on sharp wallets'; nb.disabled = Notification.permission !== 'default'; };
+  const sync = () => {
+    const on = Notification.permission === 'granted';
+    nb.classList.toggle('on', on);
+    nb.title = on ? 'Alerts on for sharp wallets' : Notification.permission === 'denied' ? 'Alerts blocked in this browser' : 'Alert me when a sharp wallet trades';
+    nb.disabled = Notification.permission !== 'default';
+  };
   sync();
   nb.addEventListener('click', async () => { await Notification.requestPermission(); sync(); });
 }
