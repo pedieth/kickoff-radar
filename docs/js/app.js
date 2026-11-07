@@ -1,8 +1,8 @@
-import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js';
+import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js?v=3';
 import {
   soccerLeagueCodes, isFootballTrade, tradeUsd, walletScore,
   isStrong, fmtUsd, fmtPct, timeAgo, tradeKey,
-} from './lib.js';
+} from './lib.js?v=3';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
