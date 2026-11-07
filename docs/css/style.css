@@ -115,3 +115,4 @@ dialog h3 { margin: 0 0 4px; font-size: 16px; }
 .foot .dot { margin: 0 6px; opacity: .5; }
 .foot .fine { font-size: 11px; opacity: .75; }
 .empty { padding: 28px; text-align: center; color: var(--muted); }
+.taker { flex: none; font-size: 10px; font-weight: 600; letter-spacing: .3px; color: var(--warn); border: 1px solid rgba(245,184,74,.45); border-radius: 6px; padding: 0 5px; line-height: 16px; }

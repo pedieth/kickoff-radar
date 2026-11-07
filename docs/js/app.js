@@ -43,7 +43,7 @@ function tradeRow(t) {
   const side = t.side === 'SELL' ? 'SELL' : 'BUY';
   return `<li class="trade${sharp ? ' sharp' : ''}" data-wallet="${esc(t.proxy_wallet)}" data-key="${esc(tradeKey(t))}">
     <div class="row1">
-      <span class="pick"><span class="side side-${side}">${side}</span><span class="outcome">${esc(t.outcome)}</span><span class="price">${Math.round(Number(t.price) * 100)}¢</span></span>
+      <span class="pick"><span class="side side-${side}">${side}</span><span class="outcome">${esc(t.outcome)}</span><span class="price">${Math.round(Number(t.price) * 100)}¢</span><span class="taker" title="Taker: this order crossed the spread and filled against resting orders, it did not sit in the book as a maker.">taker</span></span>
       <span class="amt">${fmtUsd(usd)}</span>
     </div>
     <div class="row2">
