@@ -185,6 +185,13 @@ document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('clic
   sel.dispatchEvent(new Event('change'));
 }));
 
+const tb = $('#theme');
+tb.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('theme', next); } catch {}
+});
+
 const nb = $('#notify');
 if (!('Notification' in window)) nb.hidden = true;
 else {
