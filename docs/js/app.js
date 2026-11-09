@@ -1,8 +1,10 @@
-import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js?v=3';
+import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js?v=4';
 import {
   soccerLeagueCodes, isFootballTrade, tradeUsd, walletScore,
   isStrong, fmtUsd, fmtPct, timeAgo, tradeKey,
-} from './lib.js?v=3';
+  castText, composeUrl, eventUrl, RADAR_URL,
+} from './lib.js?v=4';
+import { composeCast } from './miniapp.js?v=2';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,7 +52,9 @@ function tradeRow(t) {
       <a class="title" href="https://polymarket.com/event/${encodeURIComponent(t.event_slug || t.slug)}" target="_blank" rel="noopener">${esc(t.title)}</a>
       <span class="ago" data-ts="${Number(t.timestamp)}">${timeAgo(t.timestamp)}</span>
     </div>
-    <div class="who"><a href="https://polymarket.com/profile/${esc(t.proxy_wallet)}" target="_blank" rel="noopener">${esc(who)}</a><span class="rec">${scoreText(sc)}</span></div>
+    <div class="who"><a href="https://polymarket.com/profile/${esc(t.proxy_wallet)}" target="_blank" rel="noopener">${esc(who)}</a><span class="rec">${scoreText(sc)}</span>
+      <button class="cast" type="button" title="Cast this fill on Farcaster" aria-label="Cast this fill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 3v12" /><path d="M8 7l4-4 4 4" /></svg></button>
+    </div>
   </li>`;
 }
 
@@ -174,6 +178,17 @@ function startPolling() {
 }
 
 /* ---------- wiring ---------- */
+
+$('#whales').addEventListener('click', (e) => {
+  const btn = e.target.closest('.cast');
+  if (!btn) return;
+  const t = state.trades.get(btn.closest('.trade').dataset.key);
+  if (!t) return;
+  const text = castText(t, cachedScore(t.proxy_wallet));
+  const embeds = [RADAR_URL, eventUrl(t)];
+  composeCast(text, embeds, composeUrl(text, embeds));
+  if (window.goatcounter?.count) window.goatcounter.count({ path: 'cast-fill', title: 'Cast this fill', event: true });
+});
 
 $('#whale-min').addEventListener('change', () => { state.trades.clear(); state.firstPoll = true; pollWhales(); });
 

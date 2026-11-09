@@ -109,6 +109,10 @@ button:disabled { opacity: .55; cursor: default; }
 .who { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; font-size: 11.5px; margin-top: 2px; }
 .who > a { font-weight: 600; font-size: 12.5px; margin-right: 2px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rec { display: contents; }
+.cast { margin-left: auto; width: 26px; height: 26px; padding: 0; flex: none; display: grid; place-items: center; background: transparent; border: 1px solid var(--line); border-radius: 8px; }
+.cast svg { width: 14px; height: 14px; fill: none; stroke: var(--muted); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.cast:hover { border-color: var(--accent); }
+.cast:hover svg { stroke: var(--accent); }
 .chip { color: var(--muted); background: var(--chip); border: 1px solid var(--line); padding: 0 7px; line-height: 18px; border-radius: 999px; font-variant-numeric: tabular-nums; }
 .chip.ghost { border-style: dashed; }
 .chip.pos { color: var(--accent); }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseDate, soccerLeagueCodes, isFootballSlug, isFootballTrade, matchOutcomes,
   groupMatches, sideShare, walletScore, isStrong, fmtUsd, timeAgo,
+  castText, composeUrl, eventUrl, RADAR_URL,
 } from '../docs/js/lib.js';
 
 const sports = [
@@ -122,4 +123,22 @@ test('sideShare skips near-settled buys at 97c+ or 3c-', () => {
   assert.equal(s.rows[0].share, 1);
   assert.equal(s.rows[1].usd, 0);
   assert.equal(s.rows[1].wallets, 0);
+});
+
+test('castText includes the fill and only names sharp records', () => {
+  const t = { side: 'BUY', outcome: 'Arsenal', price: 0.63, size: 20000, title: 'Arsenal vs Chelsea', event_slug: 'epl-ars-che-2026-11-09' };
+  const plain = castText(t, { resolved: 5, winRate: 0.8 });
+  assert.match(plain, /^🐋 \$13k BUY Arsenal @ 63¢\nArsenal vs Chelsea\nvia Kickoff Radar$/);
+  const sharp = castText(t, { resolved: 31, winRate: 0.68, truncated: true });
+  assert.match(sharp, /Sharp wallet: 31\+ football bets, 68% won/);
+  assert.equal(castText({ ...t, side: 'SELL' }, undefined).split('\n')[0], '🐋 $13k SELL Arsenal @ 63¢');
+});
+
+test('composeUrl encodes text and caps embeds at two', () => {
+  const u = new URL(composeUrl('a & b\nc', ['https://x.io/1', 'https://x.io/1', 'https://x.io/2', 'https://x.io/3']));
+  assert.equal(u.origin + u.pathname, 'https://farcaster.xyz/~/compose');
+  assert.equal(u.searchParams.get('text'), 'a & b\nc');
+  assert.deepEqual(u.searchParams.getAll('embeds[]'), ['https://x.io/1', 'https://x.io/2']);
+  assert.equal(eventUrl({ slug: '' }), RADAR_URL);
+  assert.equal(eventUrl({ event_slug: 'epl-a-b' }), 'https://polymarket.com/event/epl-a-b');
 });

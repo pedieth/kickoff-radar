@@ -220,3 +220,32 @@ export function timeAgo(sec, nowMs = Date.now()) {
 }
 
 export const tradeKey = (t) => `${t.transaction_hash}:${t.token_id}:${t.proxy_wallet}:${t.size}`;
+
+/* ---------- share a fill on Farcaster ---------- */
+
+export const RADAR_URL = 'https://kickoff-radar.pedieth.workers.dev/';
+
+/** Polymarket event page for a trade, or the radar itself if the slug is missing. */
+export function eventUrl(t) {
+  const slug = t.event_slug || t.slug;
+  return slug ? `https://polymarket.com/event/${encodeURIComponent(slug)}` : RADAR_URL;
+}
+
+/** One-or-two line cast body for a fill, with the wallet's record when it's a sharp one. */
+export function castText(t, sc) {
+  const side = t.side === 'SELL' ? 'SELL' : 'BUY';
+  const price = Math.round(Number(t.price) * 100);
+  const lines = [`🐋 ${fmtUsd(tradeUsd(t))} ${side} ${t.outcome} @ ${price}¢`];
+  if (t.title) lines.push(t.title);
+  if (isStrong(sc)) lines.push(`Sharp wallet: ${sc.resolved}${sc.truncated ? '+' : ''} football bets, ${fmtPct(sc.winRate)} won`);
+  lines.push('via Kickoff Radar');
+  return lines.join('\n');
+}
+
+/** Farcaster web compose intent with up to two embeds. */
+export function composeUrl(text, embeds = []) {
+  const p = new URLSearchParams({ text });
+  const e = [...new Set(embeds.filter(Boolean))].slice(0, 2)
+    .map((u) => `embeds[]=${encodeURIComponent(u)}`).join('&');
+  return `https://farcaster.xyz/~/compose?${p.toString()}${e ? `&${e}` : ''}`;
+}
