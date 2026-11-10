@@ -33,6 +33,17 @@ export default {
     if (url.pathname === '/.well-known/farcaster.json') {
       return Response.json(manifest(), { headers: { 'access-control-allow-origin': '*', 'cache-control': 'max-age=300' } });
     }
+    // polymarket api relay, for networks that block polymarket directly
+    const pm = url.pathname.match(/^\/pm\/(gamma|data)(\/.*)$/);
+    if (pm) {
+      if (req.method !== 'GET') return new Response('method not allowed', { status: 405 });
+      const base = pm[1] === 'gamma' ? 'https://gamma-api.polymarket.com' : 'https://data-api.polymarket.com';
+      const up = await fetch(base + pm[2] + url.search, { headers: { accept: 'application/json' }, cf: { cacheTtl: 5 } });
+      const out = new Response(up.body, { status: up.status, headers: { 'content-type': up.headers.get('content-type') || 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' } });
+      const ra = up.headers.get('retry-after');
+      if (ra) { out.headers.set('retry-after', ra); out.headers.set('access-control-expose-headers', 'retry-after'); }
+      return out;
+    }
     const res = await fetch(ORIGIN + url.pathname + url.search, { cf: { cacheTtl: 300 } });
     const out = new Response(res.body, res);
     out.headers.delete('x-frame-options');

@@ -1,4 +1,4 @@
-import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js?v=4';
+import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js?v=5';
 import {
   soccerLeagueCodes, isFootballTrade, tradeUsd, walletScore,
   isStrong, fmtUsd, fmtPct, timeAgo, tradeKey,

@@ -3,11 +3,24 @@
 export const GAMMA = 'https://gamma-api.polymarket.com';
 export const DATA = 'https://data-api.polymarket.com/v2';
 
+const RELAY = 'https://kickoff-radar.pedieth.workers.dev/pm';
+let useRelay = false;
+
+// same path through the worker when polymarket itself is unreachable
+export const relayUrl = (url) => url.replace('https://gamma-api.polymarket.com', `${RELAY}/gamma`).replace('https://data-api.polymarket.com', `${RELAY}/data`);
+
+async function go(url) {
+  if (!useRelay) {
+    try { return await fetch(url); } catch { useRelay = true; }
+  }
+  return fetch(relayUrl(url));
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export async function getJson(url, { retries = 3 } = {}) {
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url);
+    const res = await go(url);
     if (res.status === 429 && attempt < retries) {
       const wait = Number(res.headers.get('retry-after')) || 2 ** attempt;
       await sleep(wait * 1000);
