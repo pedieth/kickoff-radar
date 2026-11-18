@@ -1,4 +1,4 @@
-import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js?v=5';
+import { fetchSports, fetchSoccerEvents, fetchBigTrades, fetchWalletPositions } from './api.js?v=6';
 import {
   soccerLeagueCodes, isFootballTrade, tradeUsd, walletScore,
   isStrong, fmtUsd, fmtPct, timeAgo, tradeKey,
@@ -77,7 +77,7 @@ function cachedScore(wallet) {
 
 const scoreQueue = [];
 const inFlight = new Set();
-const SCORE_WORKERS = 2;
+const SCORE_WORKERS = 4;
 let workers = 0;
 function requestScore(wallet) {
   if (cachedScore(wallet) !== undefined || scoreQueue.includes(wallet) || inFlight.has(wallet)) return;
@@ -101,7 +101,7 @@ async function runScoreQueue() {
     state.scores.set(w, s);
     inFlight.delete(w);
     paintScore(w, s);
-    await sleep(300);
+    await sleep(120);
   }
   workers--;
 }
@@ -116,7 +116,7 @@ function paintScore(wallet, s) {
 
 const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
   for (const e of entries) if (e.isIntersecting) { requestScore(e.target.dataset.wallet); io.unobserve(e.target); }
-}, { rootMargin: '200px' }) : null;
+}, { rootMargin: '800px' }) : null;
 
 function observeRows(root) {
   root.querySelectorAll('.trade').forEach((el) => {

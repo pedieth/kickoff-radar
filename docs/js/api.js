@@ -9,11 +9,18 @@ let useRelay = false;
 // same path through the worker when polymarket itself is unreachable
 export const relayUrl = (url) => url.replace('https://gamma-api.polymarket.com', `${RELAY}/gamma`).replace('https://data-api.polymarket.com', `${RELAY}/data`);
 
+// every request gets a deadline, so one hung call can never stall the record queue
+function fetchT(url, ms = 8000) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), ms);
+  return fetch(url, { signal: ac.signal }).finally(() => clearTimeout(t));
+}
+
 async function go(url) {
   if (!useRelay) {
-    try { return await fetch(url); } catch { useRelay = true; }
+    try { return await fetchT(url); } catch { useRelay = true; }
   }
-  return fetch(relayUrl(url));
+  return fetchT(relayUrl(url), 10000);
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -88,6 +95,8 @@ export async function fetchWalletPositions(user, { closedPages = 2 } = {}) {
   const rows = [];
   let truncated = false;
   let cursor = '';
+  // REDEEMABLE runs alongside the CLOSED pages instead of after them
+  const redeemP = getJson(`${DATA}/positions?${qs({ user, status: 'REDEEMABLE', limit: 1000 })}`);
   for (let i = 0; i < closedPages; i++) {
     const d = await getJson(`${DATA}/positions?${qs({ user, status: 'CLOSED', sort_by: 'TIMESTAMP', limit: 1000, cursor })}`);
     rows.push(...(d.data || []));
@@ -96,7 +105,7 @@ export async function fetchWalletPositions(user, { closedPages = 2 } = {}) {
     await sleep(250);
   }
   if (cursor) truncated = true;
-  const r = await getJson(`${DATA}/positions?${qs({ user, status: 'REDEEMABLE', limit: 1000 })}`);
+  const r = await redeemP;
   rows.push(...(r.data || []));
   if (r.pagination?.has_more) truncated = true;
   return { positions: rows, truncated };
