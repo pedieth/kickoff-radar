@@ -13,3 +13,16 @@ test('wallet records load in parallel', () => {
   assert.match(app, /SCORE_WORKERS = [4-9]/);
   assert.match(api, /const redeemP = getJson/);
 });
+// 2026-11-20: rows off screen stayed on "loading record"; every row is now queued at once
+test('every wallet is queued without waiting to scroll into view', () => {
+  assert.match(app, /requestScore\(el\.dataset\.wallet\);\s*\n\s*if \(io\) io\.observe\(el\);/);
+  assert.doesNotMatch(app, /if \(io\) io\.observe\(el\); else requestScore/);
+});
+test('one slow wallet cannot hold a worker forever', () => {
+  assert.match(app, /withDeadline\(fetchWalletPositions\(w\), WALLET_DEADLINE\)/);
+  assert.match(app, /finally \{\s*\n\s*workers--;/);
+});
+test('failed records retry instead of sticking', () => {
+  assert.match(app, /ERROR_RETRY/);
+  assert.match(app, /record unavailable/);
+});
