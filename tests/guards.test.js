@@ -26,3 +26,9 @@ test('failed records retry instead of sticking', () => {
   assert.match(app, /ERROR_RETRY/);
   assert.match(app, /record unavailable/);
 });
+// 2026-11-20: a while loop that started workers froze the page (an empty-queue worker exited synchronously)
+test('starting score workers is bounded and cannot freeze the page', () => {
+  assert.doesNotMatch(app, /while \(workers < SCORE_WORKERS\)/);
+  assert.match(app, /for \(let n = SCORE_WORKERS - workers; n > 0; n--\)/);
+  assert.match(app, /async function runScoreQueue\(\) \{\s*\n\s*await null;/);
+});
