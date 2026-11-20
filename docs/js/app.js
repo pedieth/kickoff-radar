@@ -93,12 +93,14 @@ function requestScore(wallet, front = false) {
   if (i >= 0) { if (!front) return; scoreQueue.splice(i, 1); }
   if (c && c.error) state.scores.delete(wallet);
   if (front) scoreQueue.unshift(wallet); else scoreQueue.push(wallet);
-  while (workers < SCORE_WORKERS) { workers++; runScoreQueue(); }
+  // bounded: a worker that finds the queue empty exits synchronously, so a while loop here spins forever
+  for (let n = SCORE_WORKERS - workers; n > 0; n--) { workers++; runScoreQueue(); }
 }
 
 const withDeadline = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 
 async function runScoreQueue() {
+  await null; // never finish in the same tick that started it
   try {
     while (scoreQueue.length) {
       const w = scoreQueue.shift();
