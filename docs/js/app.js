@@ -60,7 +60,8 @@ function tradeRow(t) {
 
 function scoreText(sc) {
   if (sc === undefined) return '<span class="chip ghost">loading record</span>';
-  if (!sc || sc.error) return '<span class="chip ghost">no record</span>';
+  if (sc && sc.error) return '<span class="chip ghost">record unavailable</span>';
+  if (!sc) return '<span class="chip ghost">no record</span>';
   if (!sc.resolved) return '<span class="chip ghost">new to football</span>';
   const pnlCls = sc.pnl >= 0 ? 'pos' : 'neg';
   return `<span class="chip">${sc.resolved}${sc.truncated ? '+' : ''} bets</span><span class="chip">${fmtPct(sc.winRate)} won</span><span class="chip ${pnlCls}">${fmtUsd(sc.pnl)}</span>${isStrong(sc) ? '<span class="sharp-tag">sharp</span>' : ''}`;
@@ -78,32 +79,49 @@ function cachedScore(wallet) {
 const scoreQueue = [];
 const inFlight = new Set();
 const SCORE_WORKERS = 4;
+const WALLET_DEADLINE = 25_000; // one slow wallet can never hold a worker forever
+const ERROR_RETRY = 120_000;
 let workers = 0;
-function requestScore(wallet) {
-  if (cachedScore(wallet) !== undefined || scoreQueue.includes(wallet) || inFlight.has(wallet)) return;
-  scoreQueue.push(wallet);
-  for (let n = SCORE_WORKERS - workers; n > 0; n--) { workers++; runScoreQueue(); }
+
+// every wallet in the feed gets scored right away, top of the feed first,
+// so no row is left on "loading record" waiting to be scrolled into view
+function requestScore(wallet, front = false) {
+  const c = cachedScore(wallet);
+  if (c !== undefined && !(c && c.error && Date.now() - (c.at || 0) > ERROR_RETRY)) return;
+  if (inFlight.has(wallet)) return;
+  const i = scoreQueue.indexOf(wallet);
+  if (i >= 0) { if (!front) return; scoreQueue.splice(i, 1); }
+  if (c && c.error) state.scores.delete(wallet);
+  if (front) scoreQueue.unshift(wallet); else scoreQueue.push(wallet);
+  while (workers < SCORE_WORKERS) { workers++; runScoreQueue(); }
 }
 
+const withDeadline = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+
 async function runScoreQueue() {
-  while (scoreQueue.length) {
-    const w = scoreQueue.shift();
-    if (state.scores.has(w) || inFlight.has(w)) continue;
-    inFlight.add(w);
-    let s;
-    try {
-      const { positions, truncated } = await fetchWalletPositions(w);
-      s = { ...walletScore(positions, state.leagues, state.known), truncated };
-      try { localStorage.setItem(`kr:score:${w}`, JSON.stringify({ t: Date.now(), s })); } catch { /* full */ }
-    } catch {
-      s = { error: true }; // not cached in storage, retried next session
+  try {
+    while (scoreQueue.length) {
+      const w = scoreQueue.shift();
+      if (inFlight.has(w)) continue;
+      const c = state.scores.get(w);
+      if (c !== undefined && !(c && c.error)) continue;
+      inFlight.add(w);
+      let s;
+      try {
+        const { positions, truncated } = await withDeadline(fetchWalletPositions(w), WALLET_DEADLINE);
+        s = { ...walletScore(positions, state.leagues, state.known), truncated };
+        try { localStorage.setItem(`kr:score:${w}`, JSON.stringify({ t: Date.now(), s })); } catch { /* full */ }
+      } catch {
+        s = { error: true, at: Date.now() }; // not stored, retried on a later poll
+      }
+      state.scores.set(w, s);
+      inFlight.delete(w);
+      paintScore(w, s);
+      await sleep(120);
     }
-    state.scores.set(w, s);
-    inFlight.delete(w);
-    paintScore(w, s);
-    await sleep(120);
+  } finally {
+    workers--;
   }
-  workers--;
 }
 
 function paintScore(wallet, s) {
@@ -114,14 +132,17 @@ function paintScore(wallet, s) {
   if (isStrong(s)) maybeNotify(wallet, s);
 }
 
+// rows on screen jump to the front of the queue
 const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
-  for (const e of entries) if (e.isIntersecting) { requestScore(e.target.dataset.wallet); io.unobserve(e.target); }
-}, { rootMargin: '800px' }) : null;
+  for (const e of entries) if (e.isIntersecting) { requestScore(e.target.dataset.wallet, true); io.unobserve(e.target); }
+}, { rootMargin: '200px' }) : null;
 
 function observeRows(root) {
   root.querySelectorAll('.trade').forEach((el) => {
-    if (cachedScore(el.dataset.wallet) !== undefined) return;
-    if (io) io.observe(el); else requestScore(el.dataset.wallet);
+    const c = cachedScore(el.dataset.wallet);
+    if (c !== undefined && !(c && c.error)) return;
+    requestScore(el.dataset.wallet);
+    if (io) io.observe(el);
   });
 }
 
