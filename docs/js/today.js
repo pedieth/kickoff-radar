@@ -2,7 +2,7 @@
 // the Polymarket price and the big trades on it. Insight only, never picks.
 import { fetchSoccerEvents, fetchEventTrades } from './api.js?v=6';
 import { groupMatches, sideShare, fmtUsd, fmtPct, tradeUsd, tradeKey, SETTLED_LO, SETTLED_HI } from './lib.js?v=4';
-import { fetchScoreboard, fetchSummary } from './espn.js?v=1';
+import { fetchScoreboard, fetchSummary } from './espn.js?v=2';
 import {
   parseEspnEvent, isPostponed, groupByLeague, localDayStart, espnDates,
   pairMarkets, orientOutcomes, impliedShares, parseSummary,

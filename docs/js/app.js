@@ -5,7 +5,7 @@ import {
   castText, composeUrl, eventUrl, RADAR_URL,
 } from './lib.js?v=4';
 import { composeCast } from './miniapp.js?v=3';
-import { initToday, showToday, hideToday, onMinChange } from './today.js?v=1';
+import { initToday, showToday, hideToday, onMinChange } from './today.js?v=2';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
