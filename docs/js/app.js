@@ -5,6 +5,7 @@ import {
   castText, composeUrl, eventUrl, RADAR_URL,
 } from './lib.js?v=4';
 import { composeCast } from './miniapp.js?v=3';
+import { initToday, showToday, hideToday, onMinChange } from './today.js?v=1';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -202,18 +203,51 @@ function startPolling() {
 
 /* ---------- wiring ---------- */
 
+function castTrade(t) {
+  const text = castText(t, cachedScore(t.proxy_wallet));
+  const embeds = [RADAR_URL, eventUrl(t)];
+  composeCast(text, embeds, composeUrl(text, embeds));
+  if (window.goatcounter?.count) window.goatcounter.count({ path: 'cast-fill', title: 'Cast this fill', event: true });
+}
+
 $('#whales').addEventListener('click', (e) => {
   const btn = e.target.closest('.cast');
   if (!btn) return;
   const t = state.trades.get(btn.closest('.trade').dataset.key);
   if (!t) return;
-  const text = castText(t, cachedScore(t.proxy_wallet));
-  const embeds = [RADAR_URL, eventUrl(t)];
-  composeCast(text, embeds, composeUrl(text, embeds));
-  if (window.goatcounter?.count) window.goatcounter.count({ path: 'cast-fill', title: 'Cast this fill', event: true });
+  castTrade(t);
 });
 
-$('#whale-min').addEventListener('change', () => { state.trades.clear(); state.firstPoll = true; pollWhales(); });
+$('#whale-min').addEventListener('change', () => { state.trades.clear(); state.firstPoll = true; pollWhales(); onMinChange(); });
+
+/* ---------- tabs: Trades (the live feed, unchanged) and Today ---------- */
+
+initToday({
+  root: $('#view-today'),
+  tradeRow,
+  observeRows,
+  castTrade,
+  getMin: () => Number($('#whale-min').value),
+});
+
+function setTab(name) {
+  const today = name === 'today';
+  document.querySelectorAll('.tabs [role="tab"]').forEach((b) => {
+    const on = b.dataset.tab === name;
+    b.setAttribute('aria-selected', String(on));
+    b.tabIndex = on ? 0 : -1;
+  });
+  $('#view-whales').hidden = today;
+  $('#view-today').hidden = !today;
+  if (today) showToday(); else hideToday();
+  try { localStorage.setItem('kr:tab', name); } catch {}
+  if (location.hash !== (today ? '#today' : '')) history.replaceState(null, '', today ? '#today' : location.pathname + location.search);
+}
+
+document.querySelectorAll('.tabs [role="tab"]').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+let startTab = 'trades';
+try { startTab = location.hash === '#today' ? 'today' : (localStorage.getItem('kr:tab') || 'trades'); } catch {}
+setTab(startTab === 'today' ? 'today' : 'trades');
 
 document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
