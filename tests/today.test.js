@@ -117,3 +117,14 @@ test('Today requests always carry a deadline', () => {
   assert.match(espn, /function fetchT\(/);
   assert.doesNotMatch(espn, /await fetch\(/);
 });
+
+// 2026-11-22: Pedi saw "retrying" forever; site.api.espn.com has no CORS header in browsers
+test('Today reads ESPN from the CORS-open host first, with cache-busted imports', () => {
+  const espn = readFileSync(new URL('../docs/js/espn.js', import.meta.url), 'utf8');
+  const today = readFileSync(new URL('../docs/js/today.js', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../docs/js/app.js', import.meta.url), 'utf8');
+  assert.match(espn, /HOSTS = \['https:\/\/site\.web\.api\.espn\.com'/);
+  assert.match(today, /espn\.js\?v=2/);
+  assert.match(app, /today\.js\?v=2/);
+  assert.match(readFileSync(new URL('../docs/index.html', import.meta.url), 'utf8'), /js\/app\.js\?v=12/);
+});
