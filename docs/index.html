@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0f14">
-  <meta name="description" content="Big football trades on Polymarket as they happen, with each wallet's football track record.">
+  <meta name="description" content="Big football trades on Polymarket as they happen, plus every big match of the day with form, table and market prices.">
   <title>Kickoff Radar</title>
   <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://kickoff-radar.pedieth.workers.dev/img/embed.png","button":{"title":"Open Radar","action":{"type":"launch_miniapp","name":"Kickoff Radar","url":"https://kickoff-radar.pedieth.workers.dev/","splashImageUrl":"https://kickoff-radar.pedieth.workers.dev/img/splash.png","splashBackgroundColor":"#0b0f14"}}}'>
   <meta name="fc:frame" content='{"version":"1","imageUrl":"https://kickoff-radar.pedieth.workers.dev/img/embed.png","button":{"title":"Open Radar","action":{"type":"launch_frame","name":"Kickoff Radar","url":"https://kickoff-radar.pedieth.workers.dev/","splashImageUrl":"https://kickoff-radar.pedieth.workers.dev/img/splash.png","splashBackgroundColor":"#0b0f14"}}}'>
@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://kickoff-radar.pedieth.workers.dev/img/embed.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
   <script>try{var t=localStorage.getItem('theme');if(!t)t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t;}catch(e){}</script>
-  <link rel="stylesheet" href="css/style.css?v=7">
+  <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
   <header class="top">
@@ -43,6 +43,10 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>
       </button>
     </div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button type="button" role="tab" data-tab="trades" aria-selected="true" aria-controls="view-whales">Trades</button>
+      <button type="button" role="tab" data-tab="today" aria-selected="false" aria-controls="view-today" tabindex="-1">Today</button>
+    </nav>
   </header>
 
   <main>
@@ -56,6 +60,27 @@
       </div>
       <ul id="whales" class="feed"></ul>
     </section>
+    <section id="view-today" class="view" role="tabpanel" hidden>
+      <div class="today-bar">
+        <div class="seg day-seg" role="radiogroup" aria-label="Day">
+          <button type="button" data-day="0" aria-checked="true">Today</button>
+          <button type="button" data-day="1" aria-checked="false">Tomorrow</button>
+        </div>
+        <div class="lg-chips" role="group" aria-label="Competitions">
+          <button type="button" data-f="top" aria-pressed="true">Top</button>
+          <button type="button" data-f="all" aria-pressed="false">All</button>
+          <button type="button" data-f="live" aria-pressed="false"><i class="dotlive"></i>Live</button>
+        </div>
+      </div>
+      <div class="meta-row">
+        <span id="today-status" class="muted"></span>
+        <details class="info">
+          <summary>What's here</summary>
+          <p>Every big match of the day: form, table, head-to-head, top scorers and lineups once they're out, plus the Polymarket price, where the money went and the big trades on it. Tap a match to open it. Stats from ESPN, prices from Polymarket. Insight, not tips.</p>
+        </details>
+      </div>
+      <div id="today-list"></div>
+    </section>
   </main>
 
   <footer class="foot">
@@ -65,7 +90,7 @@
     <p class="fine">Market activity, not betting advice. Data from Polymarket. Not affiliated.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=10"></script>
+  <script type="module" src="js/app.js?v=11"></script>
   <script type="module" src="js/miniapp.js?v=3"></script>
   <script data-goatcounter="https://kickoffradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
